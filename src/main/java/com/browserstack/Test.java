@@ -18,9 +18,14 @@ import java.util.Map;
 
 public class Test {
 
+    public static final int PROXY_PORT = 1234;
+    public static final String LOCAL_IDENTIFIER = "Test1";
+    public static final String HAR_FILE_NAME = "test.har";
+
     public static void main(String[] args) throws Exception {
+
         BrowserMobProxy proxy = new BrowserMobProxyServer();
-        proxy.start(1234);
+        proxy.start(PROXY_PORT);
         System.out.println("Started proxy server at: " + proxy.getPort());
 
         String username = System.getenv("BROWSERSTACK_USERNAME");
@@ -34,8 +39,8 @@ public class Test {
         options.put("forcelocal", "true");
         options.put("forceproxy", "true");
         options.put("localProxyHost", "localhost");
-        options.put("localProxyPort", "1234");
-        options.put("localIdentifier", "Test1");
+        options.put("localProxyPort", String.valueOf(PROXY_PORT));
+        options.put("localIdentifier", LOCAL_IDENTIFIER);
         l.start(options);
 
         DesiredCapabilities capabilities = new DesiredCapabilities();
@@ -48,10 +53,12 @@ public class Test {
         capabilities.setCapability("browserstack.networkLogs", "true");
         capabilities.setCapability("browserstack.acceptInsecureCerts", "true");
         capabilities.setCapability("browserstack.local", "true");
-        capabilities.setCapability("browserstack.localIdentifier", "Test1");
+        capabilities.setCapability("browserstack.localIdentifier", LOCAL_IDENTIFIER);
+        capabilities.setCapability("browserstack.user", username);
+        capabilities.setCapability("browserstack.key", accessKey);
 
         AndroidDriver<AndroidElement> driver = new AndroidDriver<>(
-                new URL("http://" + username + ":" + accessKey + "@hub.browserstack.com/wd/hub"), capabilities);
+                new URL("https://hub.browserstack.com/wd/hub"), capabilities);
 
         proxy.enableHarCaptureTypes(EnumSet.of(CaptureType.REQUEST_HEADERS, CaptureType.REQUEST_CONTENT,
                 CaptureType.RESPONSE_HEADERS, CaptureType.RESPONSE_CONTENT));
@@ -65,7 +72,7 @@ public class Test {
         for (HarEntry harEntry : entries) {
             System.out.println(harEntry.getRequest().getUrl());
         }
-        FileOutputStream fos = new FileOutputStream("test.har");
+        FileOutputStream fos = new FileOutputStream(HAR_FILE_NAME);
         proxy.getHar().writeTo(fos);
 
         driver.quit();
